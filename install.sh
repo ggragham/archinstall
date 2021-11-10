@@ -68,6 +68,7 @@ checkLVM() {
         LVM="lvm2"
     else
         echo -e "LVM undetected"
+        LVM=""
     fi
 }
 
@@ -100,10 +101,26 @@ preparation() {
     checkEncryption
 }
 
+updateSystemClock() {
+    timedatectl set-ntp true
+}
+
+
+bootstrapBaseSystem() {
+    pacstrap /mnt base base-devel vim linux linux-headers linux-firmware man-db man-pages texinfo dhcpcd $LVM
+}
+
+fstabGen() {
+    genfstab -U $MOUNT_POINT >> $MOUNT_POINT/etc/fstab
+}
+
 main() {
     wecomeMessage
     diskPartition
     preparation
+    updateSystemClock
+    bootstrapBaseSystem
+    fstabGen
 }
 
 main
