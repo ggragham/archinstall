@@ -12,19 +12,25 @@ BOOTMODE=''
 BLOCK_DEVICE=''
 ENCRYPTED_DEVICE=''
 FILESYSTEM=''
-LVM='1'
-ENCRYPTION='1'
+LVM='false'
+ENCRYPTION='false'
 USERNAME=''
 PASSWORD=''
 ROOT_PASSWORD=''
 
 wecomeMessage() {
-	echo -e '\t========================================================='
-	echo -e "\t*\t   Welcome to ${LIGHTBLUE}${BOLD}ArchLinux${NORMAL}${NC} Install script\t\t*"
-	echo -e '\t* Author made this script personally for himself\t*'
-	echo -e "\t* If you suddenly decide to use this script for yourself *\n\t* author is ${RED}not responsible${NC} for any consequences\t*"
-	echo -e '\t========================================================='
+	echo -e '\t=========================================================='
+	echo -e "\t*\t   Welcome to ${LIGHTBLUE}${BOLD}ArchLinux${NORMAL}${NC} Install script\t\t *"
+	echo -e '\t* Author made this script personally for himself\t *'
+	echo -e "\t* If you suddenly decide to use this script for yourself *\n\t* author is ${RED}not responsible${NC} for any consequences\t *"
+	echo -e '\t=========================================================='
 	echo -e '\n\n\n'
+}
+
+helpMessage() {
+	echo -e "\t${BOLD}How to use${NC}"
+	echo -e "Just type:"
+	echo -e "bash install.sh --install"
 }
 
 diskPartition() {
@@ -49,7 +55,8 @@ checkMountpoint() {
 	mountpoint -q $MOUNT_POINT
 	if [[ $? -eq 0 ]]; then
 		echo -e "Mount point: $MOUNT_POINT"
-		echo -e "Filesystem: $(findmnt $MOUNT_POINT --noheadings --output FSTYPE,TARGET | awk '$MOUNT_POINT {print $1}')"
+		FILESYSTEM=$(findmnt $MOUNT_POINT --noheadings --output FSTYPE,TARGET | awk '$MOUNT_POINT {print $1}')
+		echo -e "Filesystem: $FILESYSTEM"
 	else
 		echo -e "Filesystem isn't mounted"
 		exit 1
@@ -65,10 +72,10 @@ checkLVM() {
 	lvdisplay $BLOCK_DEVICE &>/dev/null
 	if [[ $? -eq 0 ]]; then
 		echo -e "LVM detected"
-		LVM="lvm2"
+		LVM="true"
 	else
 		echo -e "LVM undetected"
-		LVM=""
+		LVM="false"
 	fi
 }
 
@@ -80,15 +87,14 @@ checkEncryption() {
 	else
 		cryptsetup isLuks $BLOCK_DEVICE
 		ENCRYPTION=$?
-		echo -e "2"
 	fi
 
 	if [[ $ENCRYPTION -eq 0 ]]; then
 		echo -e "Encryption detected"
-		ENCRYPTION="1"
+		ENCRYPTION="true"
 	else
 		echo -e "Encryption undetected"
-		ENCRYPTION=""
+		ENCRYPTION="false"
 	fi
 
 }
@@ -106,20 +112,56 @@ updateSystemClock() {
 }
 
 bootstrapBaseSystem() {
-	pacstrap /mnt base base-devel vim linux linux-headers linux-firmware man-db man-pages texinfo dhcpcd $LVM
+	if [[ $LVM == "true" ]]; then 
+		lvm_pkg="lvm2"
+	else
+		lvm_pkg=""
+	fi
+
+	pacstrap /mnt base base-devel vim linux linux-headers linux-firmware man-db man-pages texinfo dhcpcd $lvm_pkg
 }
 
 fstabGen() {
 	genfstab -U $MOUNT_POINT >>$MOUNT_POINT/etc/fstab
 }
 
-main() {
+makeChroot() {
+	cp -r $(pwd) "$MOUNT_POINT/root/"
+	chmod +x "/root/${PWD##*/}/$0"
+	arch-chroot $MOUNT_POINT bash -c "/root/${PWD##*/}/$0 --continue $ENCRYPTION $LVM"
+}
+
+stage1() {
 	wecomeMessage
 	diskPartition
 	preparation
 	updateSystemClock
 	bootstrapBaseSystem
 	fstabGen
+	makeChroot
 }
 
-main
+stage2() {
+	ENCRYPTION="$1"
+	LVM="$2"
+	echo -e "Ecnryption: $ENCRYPTION"
+	echo -e "LVM: $LVM"
+	#TODO
+}
+
+main() {
+	case $1 in
+	--install)
+		stage1
+		;;
+	--continue)
+		stage2 $2 $3
+		;;
+	*)
+		wecomeMessage
+		helpMessage
+		;;
+	esac
+}
+
+main $1 $2 $3
