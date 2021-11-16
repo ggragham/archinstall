@@ -14,9 +14,6 @@ ENCRYPTED_DEVICE=''
 FILESYSTEM=''
 LVM='false'
 ENCRYPTION='false'
-USERNAME=''
-PASSWORD=''
-ROOT_PASSWORD=''
 
 wecomeMessage() {
 	echo -e '\t=========================================================='
@@ -52,8 +49,8 @@ checkBootMode() {
 }
 
 checkMountpoint() {
-	mountpoint -q $MOUNT_POINT
-	if [[ $? -eq 0 ]]; then
+
+	if mountpoint -q $MOUNT_POINT; then
 		echo -e "Mount point: $MOUNT_POINT"
 		FILESYSTEM=$(findmnt $MOUNT_POINT --noheadings --output FSTYPE,TARGET | awk '$MOUNT_POINT {print $1}')
 		echo -e "Filesystem: $FILESYSTEM"
@@ -69,8 +66,7 @@ checkBlockDevice() {
 }
 
 checkLVM() {
-	lvdisplay $BLOCK_DEVICE &>/dev/null
-	if [[ $? -eq 0 ]]; then
+	if lvdisplay "$BLOCK_DEVICE" &>/dev/null; then
 		echo -e "LVM detected"
 		LVM="true"
 	else
@@ -81,11 +77,11 @@ checkLVM() {
 
 checkEncryption() {
 	if [[ $LVM == lvm2 ]]; then
-		ENCRYPTED_DEVICE=$(lvs -o devices,lv_dm_path | awk -v var=$BLOCK_DEVICE '$0 ~ var {match($1, "^/dev/[a-z0-9/_]+",a)}END{print a[0]}')
-		cryptsetup isLuks $(cryptsetup status $ENCRYPTED_DEVICE 2>/dev/null | awk '/device/ {print $2}') 2>/dev/null
+		ENCRYPTED_DEVICE="$(lvs -o devices,lv_dm_path | awk -v var="$BLOCK_DEVICE" '$0 ~ var {match($1, "^/dev/[a-z0-9/_]+",a)}END{print a[0]}')"
+		cryptsetup isLuks "$(cryptsetup status "$ENCRYPTED_DEVICE" 2>/dev/null | awk '/device/ {print $2}') 2>/dev/null"
 		ENCRYPTION=$?
 	else
-		cryptsetup isLuks $BLOCK_DEVICE
+		cryptsetup isLuks "$BLOCK_DEVICE"
 		ENCRYPTION=$?
 	fi
 
@@ -112,7 +108,7 @@ updateSystemClock() {
 }
 
 bootstrapBaseSystem() {
-	if [[ $LVM == "true" ]]; then 
+	if [[ $LVM == "true" ]]; then
 		lvm_pkg="lvm2"
 	else
 		lvm_pkg=""
@@ -122,13 +118,13 @@ bootstrapBaseSystem() {
 }
 
 fstabGen() {
-	genfstab -U $MOUNT_POINT >>$MOUNT_POINT/etc/fstab
+	genfstab -U $MOUNT_POINT >> $MOUNT_POINT/etc/fstab
 }
 
 makeChroot() {
-	cp -r $(pwd) "$MOUNT_POINT/root/"
+	cp -r "$(pwd)" "$MOUNT_POINT/root/"
 	chmod +x "/root/${PWD##*/}/$0"
-	arch-chroot $MOUNT_POINT bash -c "/root/${PWD##*/}/$0 --continue $ENCRYPTION $LVM"
+	arch-chroot $MOUNT_POINT bash -c "/root/${PWD##*/}/$0" --continue $ENCRYPTION $LVM
 }
 
 stage1() {
@@ -155,7 +151,7 @@ main() {
 		stage1
 		;;
 	--continue)
-		stage2 $2 $3
+		stage2 "$2" "$3"
 		;;
 	*)
 		wecomeMessage
@@ -164,4 +160,4 @@ main() {
 	esac
 }
 
-main $1 $2 $3
+main "$1" "$2" "$3"
