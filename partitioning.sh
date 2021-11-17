@@ -1,6 +1,6 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 
-selectedDevice=""
+SELECTED_DEVICE=""
 
 lsblkAlias() {
 	lsblk --nodeps --exclude 7 --noheadings --paths --output TYPE,NAME,SIZE,MODEL
@@ -29,7 +29,7 @@ selectDisk() {
 			read -rp "Select the disk to which Linux will be installed: " selectedDiskNumber
 			continue
 		fi
-		selectedDevice=$(lsblkAlias | awk -v disk="$selectedDiskNumber" 'NR==disk{print $2}')
+		SELECTED_DEVICE=$(lsblkAlias | awk -v disk="$selectedDiskNumber" 'NR==disk{print $2}')
 		break
 	done
 
@@ -45,17 +45,17 @@ makePartitions() {
 		echo   # First sector
 		echo   # Last sector
 		echo w # Write changes
-	) | sudo fdisk "$selectedDevice" &>/dev/null
+	) | fdisk "$SELECTED_DEVICE" &>>"$(pwd)/partitioning_log.txt"
 
 	errorCheck "$?"
 	echo -e "Creating filesystems"
-	mkfs.ext4 "$selectedDevice"1 &>/dev/null
+	mkfs.ext4 "$SELECTED_DEVICE"1 &>>"$(pwd)/partitioning_log.txt"
 	errorCheck "$?"
 }
 
 mountPartitions() {
 	echo -e "Mounting partition to /mnt"
-	mount "$selectedDevice"1 /mnt
+	mount "$SELECTED_DEVICE"1 /mnt
 	errorCheck "$?"
 }
 
@@ -66,3 +66,5 @@ main() {
 	mountPartitions
 	echo -e "Partitioning completed"
 }
+
+main

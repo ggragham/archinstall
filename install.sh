@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 BOLD=$(tput bold)
+UNDERLINE='\033[4m'
 NORMAL=$(tput sgr0)
 RED='\033[0;31m'
 LIGHTBLUE='\033[1;34m'
@@ -31,12 +32,32 @@ helpMessage() {
 }
 
 diskPartition() {
-	echo -e '\tDisk Partition'
-	echo -e "\t${RED}${BOLD}NOT COMPLETED${NORMAL}${NC}"
-	echo -e '\tPartition the disk manually'
-	echo -e '\tFormat the partitions to the desired filesystem and mount to /mnt'
-	echo -e '\tYou are free to use LVM and Encryption'
-	echo -e '\n\n\n'
+	select="*"
+	echo -e 'Disk Partition'
+	echo -e "${RED}${BOLD}NOT COMPLETED${NORMAL}${NC}"
+	echo -e ""
+
+	while :; do
+		case $select in
+		y)
+			chmod +x "$(pwd)/partitioning.sh"
+			bash -c "$(pwd)/partitioning.sh"
+			break
+			;;
+		n)
+			echo -e 'Partition the disk manually'
+			echo -e 'Format the partitions to the desired filesystem and mount them to /mnt'
+			echo -e 'You are free to use LVM and/or Encryption'
+			echo -e "For more information visit ${UNDERLINE}https://wiki.archlinux.org/title/Installation_guide#Partition_the_disks${NORMAL}"
+			break
+			;;
+		*)
+			read -rp "Use automatic partition? (May be buggy) [y/n]: " select
+			continue
+			;;
+		esac
+	done
+	echo -e ''
 }
 
 checkBootMode() {
@@ -118,13 +139,13 @@ bootstrapBaseSystem() {
 }
 
 fstabGen() {
-	genfstab -U $MOUNT_POINT >> $MOUNT_POINT/etc/fstab
+	genfstab -U $MOUNT_POINT >>$MOUNT_POINT/etc/fstab
 }
 
 makeChroot() {
 	cp -r "$(pwd)" "$MOUNT_POINT/root/"
-	chmod +x "/root/${PWD##*/}/$0"
-	arch-chroot $MOUNT_POINT bash -c "/root/${PWD##*/}/$0" --continue $ENCRYPTION $LVM
+	chmod +x "$MOUNT_POINT/root/${PWD##*/}/$0"
+	arch-chroot $MOUNT_POINT bash -c "/root/${PWD##*/}/$0 --continue $ENCRYPTION $LVM"
 }
 
 stage1() {
