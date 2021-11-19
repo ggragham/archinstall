@@ -174,6 +174,12 @@ setHostname() {
 	echo -e "$hostname" > /etc/hostname
 }
 
+addUsers() {
+	read -rp "Enter username: " username
+	useradd -m -G wheel -s /bin/bash $username
+	passwd $username
+}
+
 stage1() {
 	wecomeMessage
 	diskPartition
@@ -191,6 +197,7 @@ stage2() {
 
 	setLocales
 	setHostname
+	addUsers
 }
 
 main() {
