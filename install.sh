@@ -180,6 +180,13 @@ addUsers() {
 	passwd "$username"
 }
 
+installBootloader() {
+	pacman -Sy grub os-prober
+	grub_target=$(echo -e "$BLOCK_DEVICE" | awk '/[^0-9]/')
+	grub-install "$grub_target"
+	grub-mkconfig -o /boot/grub/grub/cfg
+}
+
 stage1() {
 	wecomeMessage
 	diskPartition
@@ -200,6 +207,7 @@ stage2() {
 	addUsers
 	# Add wheel group to sudoers
 	sed -i '/%wheel ALL=(ALL) ALL/s/^# //' /etc/sudoers
+	installBootloader
 
 }
 
