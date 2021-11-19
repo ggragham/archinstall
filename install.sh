@@ -169,6 +169,11 @@ setLocales() {
 	done
 }
 
+setHostname() {
+	read -rp "Enter hostname: " hostname
+	echo -e "$hostname" > /etc/hostname
+}
+
 stage1() {
 	wecomeMessage
 	diskPartition
@@ -185,6 +190,7 @@ stage2() {
 	CHROOT_POINT="$3"
 
 	setLocales
+	setHostname
 }
 
 main() {
