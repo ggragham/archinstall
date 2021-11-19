@@ -176,8 +176,8 @@ setHostname() {
 
 addUsers() {
 	read -rp "Enter username: " username
-	useradd -m -G wheel -s /bin/bash $username
-	passwd $username
+	useradd -m -G wheel -s /bin/bash "$username"
+	passwd "$username"
 }
 
 stage1() {
