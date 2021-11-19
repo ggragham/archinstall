@@ -9,6 +9,7 @@ NC='\033[0m'
 
 #Global vars
 MOUNT_POINT='/mnt'
+CHROOT_POINT="/root/${PWD##*/}"
 BOOTMODE=''
 BLOCK_DEVICE=''
 ENCRYPTED_DEVICE=''
@@ -144,8 +145,28 @@ fstabGen() {
 
 makeChroot() {
 	cp -r "$(pwd)" "$MOUNT_POINT/root/"
-	chmod +x "$MOUNT_POINT/root/${PWD##*/}/$0"
-	arch-chroot $MOUNT_POINT bash -c "/root/${PWD##*/}/$0 --continue $ENCRYPTION $LVM"
+	chmod +x "$MOUNT_POINT$CHROOT_POINT/$0"
+	arch-chroot $MOUNT_POINT bash -c "$CHROOT_POINT/$0 --continue $ENCRYPTION $LVM $CHROOT_POINT"
+}
+
+setLocales() {
+	cat "$CHROOT_POINT/config/locale.gen" >/etc/locale.gen
+	locale-gen
+
+	LOCALES_LINE_COUNT=$(wc -l <"$CHROOT_POINT/config/locale.gen")
+	selectedLocaleNumber="0"
+
+	while :; do
+		if [[ $selectedLocaleNumber -gt $LOCALES_LINE_COUNT ]] || [[ $selectedLocaleNumber -le 0 ]]; then
+			cat "$CHROOT_POINT/config/locale.gen" | sed '=' | sed 'N;s/\n/\) /'
+			read -rp "Select default locale: " selectedLocaleNumber
+			continue
+		fi
+		cat "$CHROOT_POINT/config/locale.conf" >/etc/locale.conf
+		selectedLocale=$(awk -v selectedLocale="$selectedLocaleNumber" 'NR==selectedLocale{print $1}' <"/etc/locale.gen")
+		sed -i "/LANG/s/\$SET_LOCALE/$selectedLocale/" /etc/locale.conf
+		break
+	done
 }
 
 stage1() {
@@ -161,9 +182,9 @@ stage1() {
 stage2() {
 	ENCRYPTION="$1"
 	LVM="$2"
-	echo -e "Ecnryption: $ENCRYPTION"
-	echo -e "LVM: $LVM"
-	#TODO
+	CHROOT_POINT="$3"
+
+	setLocales
 }
 
 main() {
@@ -172,7 +193,7 @@ main() {
 		stage1
 		;;
 	--continue)
-		stage2 "$2" "$3"
+		stage2 "$2" "$3" "$4"
 		;;
 	*)
 		wecomeMessage
@@ -181,4 +202,4 @@ main() {
 	esac
 }
 
-main "$1" "$2" "$3"
+main "$1" "$2" "$3" "$4"
