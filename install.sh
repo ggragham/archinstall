@@ -146,7 +146,7 @@ fstabGen() {
 makeChroot() {
 	cp -r "$(pwd)" "$MOUNT_POINT/root/"
 	chmod +x "$MOUNT_POINT$CHROOT_POINT/$0"
-	arch-chroot $MOUNT_POINT bash -c "$CHROOT_POINT/$0 --continue $ENCRYPTION $LVM $CHROOT_POINT"
+	arch-chroot $MOUNT_POINT bash -c "$CHROOT_POINT/$0 --continue $ENCRYPTION $LVM $CHROOT_POINT $BLOCK_DEVICE"
 }
 
 setLocales() {
@@ -181,10 +181,10 @@ addUsers() {
 }
 
 installBootloader() {
-	pacman -Sy grub os-prober
-	grub_target=$(echo -e "$BLOCK_DEVICE" | awk '/[^0-9]/')
+	pacman -Sy --noconfirm grub os-prober
+	grub_target=$(echo -e "$BLOCK_DEVICE" | tr -d '0-9')
 	grub-install "$grub_target"
-	grub-mkconfig -o /boot/grub/grub/cfg
+	grub-mkconfig -o /boot/grub/grub.cfg
 }
 
 stage1() {
@@ -201,6 +201,7 @@ stage2() {
 	ENCRYPTION="$1"
 	LVM="$2"
 	CHROOT_POINT="$3"
+	BLOCK_DEVICE="$4"
 
 	setLocales
 	setHostname
@@ -217,7 +218,7 @@ main() {
 		stage1
 		;;
 	--continue)
-		stage2 "$2" "$3" "$4"
+		stage2 "$2" "$3" "$4" "$5"
 		;;
 	*)
 		wecomeMessage
@@ -226,4 +227,4 @@ main() {
 	esac
 }
 
-main "$1" "$2" "$3" "$4"
+main "$1" "$2" "$3" "$4" "$5"
