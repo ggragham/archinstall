@@ -198,6 +198,9 @@ stage2() {
 	setLocales
 	setHostname
 	addUsers
+	# Add wheel group to sudoers
+	sed -i '/%wheel ALL=(ALL) ALL/s/^# //' /etc/sudoers
+
 }
 
 main() {
