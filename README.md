@@ -20,3 +20,10 @@ cd archinstall/
 bash install.sh --install
 ```
 7. Follow the instructions
+
+## TODO
+* [ ] Add more variables of Environments
+* [ ] Add automatic detection of GPU and CPU driver
+* [ ] Add RAID detection
+* [ ] Add BTRFS detection
+* [ ] Add UEFI specific bootloader
