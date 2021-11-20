@@ -216,6 +216,7 @@ stage2() {
 	sed -i '/%wheel ALL=(ALL) ALL/s/^# //' /etc/sudoers
 	installBootloader
 	installEnvironment
+	echo -e "\nInstalation fisished!\nNow reboot"
 }
 
 main() {
