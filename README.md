@@ -27,3 +27,5 @@ bash install.sh --install
 * [ ] Add RAID detection
 * [ ] Add BTRFS detection
 * [ ] Add UEFI specific bootloader
+* [ ] Make more flexible Disk Partition
+* [ ] Add selection menu for kernels, editors, etc
