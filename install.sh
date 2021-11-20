@@ -187,6 +187,12 @@ installBootloader() {
 	grub-mkconfig -o /boot/grub/grub.cfg
 }
 
+installEnvironment() {
+	pacman -Sy --noconfirm networkmanager gdm gnome-shell gnome-terminal gnome-control-center
+	systemctl enable NetworkManager
+	systemctl enable gdm
+}
+
 stage1() {
 	wecomeMessage
 	diskPartition
@@ -209,7 +215,7 @@ stage2() {
 	# Add wheel group to sudoers
 	sed -i '/%wheel ALL=(ALL) ALL/s/^# //' /etc/sudoers
 	installBootloader
-
+	installEnvironment
 }
 
 main() {
