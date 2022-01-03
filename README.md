@@ -9,7 +9,7 @@ Script not fully completed. Use only on VM
 3. Boot up from Flash Drive with ArchLinux ISO
 4. Clone this repo
 ```bash
-git clone https://gitlab.com/gragham/archinstall.git
+git clone https://github.com/ggragham/archinstall.git
 ```
 5. Change to the directory with the script
 ```bash
